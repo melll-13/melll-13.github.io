@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blokz — Tetris on FPGA Case Study</title>
+
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="blokz.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg: #f4f6f8;
+      --paper: #ffffff;
+      --ink: #0f172a;
+      --ink-soft: #475569;
+      --accent: #0284c7;
+      --line: #e2e8f0;
+      --line-soft: #eef2f6;
+      --font-mono: 'IBM Plex Mono', monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      position: relative;
+      background-color: var(--bg);
+      color: var(--ink);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ===== BACKGROUND TETRIS CANVAS ===== */
+    #tetris-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw; height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ===== MAIN PAGE CONTAINER ===== */
+    .cst {
+      position: relative;
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 64px 24px 120px;
+      z-index: 1;
+      background-image: radial-gradient(rgba(15, 23, 42, 0.12) 1px, transparent 1px);
+      background-size: 24px 24px;
+    }
+
+    .cst::before {
+      content: '';
+      position: absolute;
+      top: 10%; left: -180px;
+      width: 420px; height: 420px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.35) 0%, rgba(168, 85, 247, 0.25) 50%, rgba(244, 246, 248, 0) 70%);
+      filter: blur(50px);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .cst::after {
+      content: '';
+      position: absolute;
+      top: 45%; right: -180px;
+      width: 450px; height: 450px;
+      background: radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, rgba(99, 102, 241, 0.25) 50%, rgba(244, 246, 248, 0) 70%);
+      filter: blur(60px);
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    /* Hero */
+    .hero-tetris-container {
+      position: relative;
+      width: 100%;
+      padding: 40px 0 20px;
+      margin-bottom: 1rem;
+    }
+
+    .hero-overlay h1 {
+      color: var(--ink);
+      font-family: var(--font-mono);
+      margin: 0;
+      font-size: 3rem;
+      letter-spacing: -0.02em;
+    }
+
+    .back-link {
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--ink-soft);
+      display: inline-block;
+      margin-bottom: 32px;
+      text-decoration: none;
+    }
+    .back-link:hover { color: var(--accent); }
+
+    .cst-head { margin-bottom: 40px; }
+
+    .cst-head .course-code {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 0.05em;
+      font-weight: 500;
+    }
+
+    .cst-sub {
+      color: var(--ink-soft);
+      font-size: 1.05rem;
+      max-width: 55ch;
+      margin: 12px 0 0;
+    }
+
+    /* Video */
+    .video-frame {
+      background: var(--paper);
+      border-radius: 14px;
+      padding: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      border: 1px solid var(--line);
+    }
+
+    .video-frame video {
+      width: 100%;
+      display: block;
+      border-radius: 8px;
+      background: #000;
+    }
+
+    .video-caption {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+      text-align: center;
+      margin: 12px 0 48px;
+    }
+
+    /* Meta row */
+    .meta-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      padding: 24px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      margin-bottom: 64px;
+      font-size: 0.92rem;
+      color: var(--ink);
+    }
+
+    .meta-label {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+    }
+
+    /* Section headers used throughout */
+    .section-header { margin-bottom: 20px; }
+    .section-header h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 1.35rem;
+      margin: 8px 0 0;
+      color: var(--ink);
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 56px;
+      margin-bottom: 64px;
+    }
+
+    .timeline::before {
+      content: "";
+      position: absolute;
+      left: 19px;
+      top: 8px; bottom: 8px;
+      width: 2px;
+      background: var(--line);
+    }
+
+    .tl-item {
+      position: relative;
+      padding-bottom: 56px;
+    }
+    .tl-item:last-child { padding-bottom: 0; }
+
+    .tl-marker {
+      position: absolute;
+      left: -56px; top: 0;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: #ffffff;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      z-index: 1;
+    }
+
+    .tl-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--accent);
+      background: rgba(2, 132, 199, 0.08);
+      padding: 3px 8px;
+      border-radius: 100px;
+      display: inline-block;
+      margin-bottom: 10px;
+    }
+
+    .tl-content h2 {
+      font-family: 'Fraunces', serif;
+      font-weight: 600;
+      font-size: 1.35rem;
+      margin: 0 0 10px;
+      color: var(--ink);
+    }
+
+    .tl-content p {
+      color: var(--ink-soft);
+      font-size: 0.98rem;
+      line-height: 1.65;
+      margin: 0;
+      max-width: 58ch;
+    }
+
+    .tl-image {
+      margin-top: 16px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      background: #ffffff;
+      padding: 8px;
+    }
+
+    .tl-image img {
+      width: 100%;
+      height: auto;
+      display: block;
+      border-radius: 4px;
+    }
+
+    /* Generic content sections + white cards */
+    .portfolio-section {
+      margin: 0 auto 64px;
+      max-width: 850px;
+    }
+
+    .grid-2col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 22px;
+      color: var(--ink);
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    }
+    .card h3 {
+      margin-top: 0;
+      color: var(--accent);
+      font-size: 1rem;
+    }
+    .card p { color: var(--ink-soft); line-height: 1.6; }
+    .card ul {
+      padding-left: 18px;
+      margin-bottom: 0;
+      color: var(--ink-soft);
+    }
+    .card li {
+      margin-bottom: 8px;
+      line-height: 1.5;
+    }
+    .card li strong { color: var(--ink); }
+
+    .table-container { overflow-x: auto; }
+    .custom-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--paper);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+    .custom-table th, .custom-table td {
+      padding: 12px 16px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.92rem;
+    }
+    .custom-table tr:last-child td { border-bottom: none; }
+    .custom-table th {
+      background: #f8fafc;
+      color: var(--ink);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .custom-table td { color: var(--ink-soft); }
+    .custom-table td code { color: var(--accent); font-family: var(--font-mono); }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+    .result-card {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+    }
+    .result-num {
+      display: block;
+      font-size: 2rem;
+      font-weight: bold;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+    .result-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+    }
+
+    /* Code snippet — light, matches the rest of the page */
+    .code-snippet {
+      background: #f8fafc;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 14px;
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+    .code-snippet pre {
+      margin: 0;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--ink);
+    }
+    .code-snippet code { color: var(--accent); }
+
+    .mb-20 { margin-bottom: 20px; }
+
+    /* FSM card */
+    .fsm-diagram-svg {
+      background: #f8fafc;
+      padding: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+    .fsm-note {
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: var(--ink-soft);
+    }
+    .fsm-title { color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+    .fsm-list { list-style: none; padding: 0; margin: 0; }
+    .fsm-list li { display: flex; gap: 10px; margin-bottom: 4px; }
+    .fsm-list .dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+    .dot.purple { background: #a855f7; }
+    .dot.yellow { background: #eab308; }
+    .dot.blue { background: #38bdf8; }
+    .fsm-callout {
+      background: rgba(244, 63, 94, 0.08);
+      border-left: 3px solid #f43f5e;
+      padding: 10px 12px;
+      border-radius: 4px;
+      color: #be123c;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    /* External Links & Buttons */
+    .cs-links { display: flex; gap: 12px; margin-top: 16px; }
+
+    .btn {
+      display: inline-block;
+      padding: 10px 18px;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      text-decoration: none;
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      transition: all 0.2s ease;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #ffffff;
+      font-weight: 500;
+    }
+    .btn-primary:hover { background: #0369a1; }
+
+    @media (max-width: 640px) {
+      .meta-row { grid-template-columns: 1fr; }
+      .timeline { padding-left: 44px; }
+      .timeline::before { left: 15px; }
+      .tl-marker { left: -44px; width: 32px; height: 32px; font-size: 0.68rem; }
+      .grid-2col, .results-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="tetris-canvas"></canvas>
+
+  <header class="site-nav">
+    <a href="index.html" class="nav-mark">MS<span>.</span></a>
+    <nav>
+      <a href="index.html#web">Web Dev</a>
+      <a href="index.html#fpga">FPGA &amp; Systems</a>
+      <a href="index.html#design">Design</a>
+      <a href="index.html#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main class="cst">
+
+    <a href="index.html#fpga" class="back-link">← Back to projects</a>
+
+    <!-- ===== HERO ===== -->
+    <section class="cst-head">
+      <div class="hero-tetris-container">
+        <div class="hero-overlay">
+          <h1>BLOKZ</h1>
+        </div>
+      </div>
+      <span class="course-code">VERILOG · CYCLONE IV FPGA</span>
+      <p class="cst-sub">A hardware-level Tetris game engine written in Verilog with VGA-to-HDMI direct driving on an Altera Cyclone IV board.</p>
+    </section>
+
+    <!-- ===== VIDEO DEMO ===== -->
+    <section class="video-section">
+      <div class="video-frame">
+        <video controls poster="demo-poster.jpg">
+          <source src="demo.mp4" type="video/mp4">
+          Your browser doesn't support embedded video —
+          <a href="demo.mp4">download the demo video</a> instead.
+        </video>
+      </div>
+      <p class="video-caption">Real-time hardware demonstration running at 60Hz output to an HP E27 G5 monitor.</p>
+    </section>
+
+    <!-- ===== METADATA ===== -->
+    <section class="meta-row">
+      <div>
+        <span class="meta-label">Role</span><br>
+        Hardware Design &amp; Verilog Logic
+      </div>
+      <div>
+        <span class="meta-label">Tools / Hardware</span><br>
+        Verilog HDL, Quartus Prime, Cyclone IV FPGA
+      </div>
+      <div>
+        <span class="meta-label">Timeframe</span><br>
+        Spring 2026
+      </div>
+    </section>
+
+    <!-- ===== TIMELINE: PROJECT NARRATIVE ===== -->
+    <section class="timeline">
+      <div class="tl-item">
+        <div class="tl-marker"><span>01</span></div>
+        <div class="tl-content">
+          <span class="tl-tag">Architecture</span>
+          <h2>VGA Sync &amp; Hardware Timing</h2>
+          <p>The HP E27 G5 monitor only accepts digital HDMI input, which isn't directly compatible with the FPGA's 3.3V GPIO pins. To bridge this, I routed the digital signals into an active Steren VGA–HDMI converter to translate the timing into HDMI data. In Verilog, custom counters in <code>vga_sync</code> drive the pixel timing. When the monitor initially threw an "Input Signal Out of Range" error, I tuned <code>V_TOTAL</code> and the vertical blanking parameters until the 24 MHz clock produced a stable frame.</p>
+          <div class="tl-image">
+            <img src="vga-timing.png" alt="VGA Timing Architecture Diagram" onerror="this.style.display='none'">
+          </div>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-marker"><span>02</span></div>
+        <div class="tl-content">
+          <span class="tl-tag">Game Logic</span>
+          <h2>LFSR &amp; State Machines</h2>
+          <p>Implemented a 7-bit Linear Feedback Shift Register (LFSR) for pseudo-random tetromino generation, alongside synchronous finite state machines for gravity, collision checks, and row clearing.</p>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-marker"><span>03</span></div>
+        <div class="tl-content">
+          <span class="tl-tag">Graphics</span>
+          <h2>Font Engine &amp; Grid Renderer</h2>
+          <p>Built a lightweight combinational font ROM for score displays and splash screens, plus a 20×10 block matrix pipeline rendered in parallel hardware cycles.</p>
+        </div>
+      </div>
+
+      <div class="tl-item">
+        <div class="tl-marker"><span>04</span></div>
+        <div class="tl-content">
+          <span class="tl-tag">Validation</span>
+          <h2>Debouncing &amp; Hardware Testing</h2>
+          <p>Built hardware debouncing filters using 20-bit counters to stabilize key input signals on the physical board switches, and resolved FPGA pin reservation conflicts during synthesis.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== HARDWARE REFERENCE ===== -->
+    <section class="portfolio-section">
+      <div class="section-header">
+        <span class="tl-tag">Reference</span>
+        <h2>Controls &amp; Pinout</h2>
+      </div>
+      <div class="grid-2col mb-20">
+        <div class="card">
+          <h3>Physical Controls</h3>
+          <ul>
+            <li><strong>KEY1 (Pin 88):</strong> Move left</li>
+            <li><strong>KEY2 (Pin 89):</strong> Move right</li>
+            <li><strong>KEY3 (Pin 90):</strong> Rotate piece</li>
+            <li><strong>KEY4 (Pin 91):</strong> Soft drop</li>
+            <li><strong>Pin 25:</strong> Hardware reset</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>Core Mechanics</h3>
+          <ul>
+            <li><strong>Adaptive gravity:</strong> Drop speed increases across 7 difficulty levels based on score.</li>
+            <li><strong>Randomization:</strong> 7-bit LFSR (x⁷ ⊕ x⁶) for piece generation.</li>
+            <li><strong>Board memory:</strong> A flat 200-bit register array manages the 10×20 grid with no external RAM.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="custom-table">
+          <thead>
+            <tr>
+              <th>Signal</th>
+              <th>FPGA Pin</th>
+              <th>Function</th>
+              <th>Direction</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>clk</code></td>
+              <td>Pin 23</td>
+              <td>24 MHz global clock</td>
+              <td>Input</td>
+            </tr>
+            <tr>
+              <td><code>btn_reset</code></td>
+              <td>Pin 25</td>
+              <td>Global reset button</td>
+              <td>Input</td>
+            </tr>
+            <tr>
+              <td><code>vga_hsync</code></td>
+              <td>Pin 101</td>
+              <td>Horizontal sync</td>
+              <td>Output</td>
+            </tr>
+            <tr>
+              <td><code>vga_vsync</code></td>
+              <td>Pin 103</td>
+              <td>Vertical sync</td>
+              <td>Output</td>
+            </tr>
+            <tr>
+              <td><code>vga_r / g / b</code></td>
+              <td>Pins 106 / 105 / 104</td>
+              <td>Digital RGB (1-bit per color)</td>
+              <td>Output</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== STATE MACHINES ===== -->
+    <section class="portfolio-section">
+      <div class="section-header">
+        <span class="tl-tag">Deep Dive</span>
+        <h2>Finite State Machines</h2>
+      </div>
+
+<div class="card" style="margin-bottom: 16px;">
+  <div class="fsm-diagram-svg">
+    <svg viewBox="0 0 850 260" preserveAspectRatio="xMidYMid meet" style="width: 100%;">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1 L 10 5 L 0 9 z" fill="#94a3b8" />
+        </marker>
+      </defs>
+
+      <!-- Power-On Reset Vector -->
+      <path d="M 20,130 L 41,130" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)" />
+      <text x="30" y="118" text-anchor="middle" fill="#64748b" font-size="11" font-weight="bold">rst</text>
+
+      <!-- Self Loop on GAMEPLAY: down_tick || grav_tick -->
+      <path d="M 400,85 C 380,25 470,25 450,85" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)" />
+      <text x="425" y="20" text-anchor="middle" fill="#64748b" font-size="12" font-family="monospace">down_tick || grav_tick</text>
+
+      <!-- Transition: IDLE -> GAMEPLAY (~game_over) -->
+      <path d="M 155,100 Q 252,65 350,100" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)" />
+      <text x="252" y="65" text-anchor="middle" fill="#64748b" font-size="12" font-family="monospace">!game_over</text>
+
+      <!-- Transition: GAMEPLAY -> GAME OVER (game_over == 1) -->
+      <path d="M 500,100 Q 597,65 695,100" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)" />
+      <text x="597" y="65" text-anchor="middle" fill="#64748b" font-size="12" font-family="monospace">game_over == 1'b1</text>
+
+      <!-- Transition: GAME OVER -> RESET / IDLE (rst) -->
+      <path d="M 700,160 Q 425,250 150,160" fill="none" stroke="#94a3b8" stroke-width="2" marker-end="url(#arrow)" />
+      <text x="425" y="222" text-anchor="middle" fill="#64748b" font-size="12" font-family="monospace">rst (~btn_reset)</text>
+
+      <!-- State 1: RESET / IDLE -->
+      <g transform="translate(100,130)">
+        <circle r="52" fill="#ffffff" stroke="#eab308" stroke-width="2" />
+        <text y="-5" text-anchor="middle" fill="#a16207" font-weight="bold" font-size="13">RESET / IDLE</text>
+        <text y="15" text-anchor="middle" fill="#64748b" font-size="11">(Title Screen)</text>
+      </g>
+
+      <!-- State 2: GAMEPLAY -->
+      <g transform="translate(425,130)">
+        <circle r="52" fill="#ffffff" stroke="#0284c7" stroke-width="2" />
+        <text y="-5" text-anchor="middle" fill="#0284c7" font-weight="bold" font-size="13">GAMEPLAY</text>
+        <text y="15" text-anchor="middle" fill="#64748b" font-size="11">(Active Game)</text>
+      </g>
+
+      <!-- State 3: GAME OVER -->
+      <g transform="translate(750,130)">
+        <circle r="52" fill="#ffffff" stroke="#f43f5e" stroke-width="2" />
+        <text y="-5" text-anchor="middle" fill="#e11d48" font-weight="bold" font-size="13">GAME OVER</text>
+        <text y="15" text-anchor="middle" fill="#64748b" font-size="11">(Final Score)</text>
+      </g>
+    </svg>
+    <div class="fsm-note"><span style="color:#e11d48;">●</span> Standard Active-High Reset: <code>rst = ~btn_reset</code></div>
+  </div>
+</div>
+
+
+<div class="card">
+        <div class="fsm-title">board.v — Line-Clear FSM (3 states)</div>
+        <ul class="fsm-list">
+          <li>
+            <span class="dot purple"></span>
+            <div>
+              <strong>WAIT_LOCK</strong> <span style="color:var(--ink-soft);">→ lock_piece → SCAN</span>
+              <p style="margin:4px 0 12px 0;">Idle. Waits for game_logic to signal a piece has locked into the board.</p>
+            </div>
+          </li>
+          <li>
+            <span class="dot yellow"></span>
+            <div>
+              <strong>SCAN_ROWS</strong> <span style="color:var(--ink-soft);">→ all rows checked → SHIFT</span>
+              <p style="margin:4px 0 12px 0;">Checks each of 20 rows: if board_row[i] == 10'b1111111111, mark it for clearing.</p>
+            </div>
+          </li>
+          <li>
+            <span class="dot blue"></span>
+            <div>
+              <strong>SHIFT_DOWN</strong> <span style="color:var(--ink-soft);">→ done → WAIT_LOCK</span>
+              <p style="margin:4px 0 12px 0;">Removes marked rows; rows above shift down by one. Score updated: +10 per line.</p>
+            </div>
+          </li>
+        </ul>
+        <div class="fsm-callout">game_over raised when a piece locks with any block in row 0</div>
+      </div>
+    </section>
+
+    <!-- ===== BITS TO PIXELS ===== -->
+    <section class="portfolio-section">
+      <div class="section-header">
+        <span class="tl-tag">Digital Logic</span>
+        <h2>How It Works: Bits to Pixels</h2>
+      </div>
+
+      <div class="card mb-20">
+        <h3>Direct Binary Color Mapping</h3>
+        <p>Every pixel on screen is pure binary logic evaluated on the fly each clock cycle. Without external video RAM or a GPU, each RGB channel is driven by a single FPGA GPIO pin (1-bit per color), giving 8 distinct color combinations:</p>
+        <div class="code-snippet">
+          <pre><code>// Verilog: real-time RGB bit assignment
+case (anim_shape_id)
+  3'd1: {vga_r, vga_g, vga_b} = 3'b011; // Cyan    -> Piece I
+  3'd2: {vga_r, vga_g, vga_b} = 3'b110; // Yellow  -> Piece O
+  3'd3: {vga_r, vga_g, vga_b} = 3'b101; // Magenta -> Piece T
+  3'd5: {vga_r, vga_g, vga_b} = 3'b100; // Red     -> Piece Z
+  default: {vga_r, vga_g, vga_b} = 3'b000; // Off
+endcase</code></pre>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>FPGA to Monitor</h3>
+        <p>At 24 MHz, the rasterizer calculates <code>pixel_x</code> / <code>pixel_y</code> and outputs 5 digital TTL signals over GPIO: HSYNC, VSYNC, and the RGB bits.</p>
+        <ul>
+          <li><strong>FPGA output:</strong> raw 3.3V square waves streamed bit-by-bit as the scanline traverses the screen.</li>
+          <li><strong>Steren adapter:</strong> samples the 3.3V logic levels, locks onto the sync timing, and recodes it into differential TMDS packets.</li>
+          <li><strong>HP monitor:</strong> decodes the TMDS stream from HDMI and lights up the display in real time.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ===== RESULTS ===== -->
+    <section class="portfolio-section">
+      <div class="section-header">
+        <span class="tl-tag">Validation</span>
+        <h2>Results &amp; Lessons Learned</h2>
+      </div>
+      <div class="results-grid">
+        <div class="result-card">
+          <span class="result-num">35%</span>
+          <p>Logic element utilization on the Cyclone IV, showing a light resource footprint.</p>
+        </div>
+        <div class="result-card">
+          <span class="result-num">41.7 ns</span>
+          <p>Hardware response time — one clock cycle at 24 MHz, with zero perceptible input lag.</p>
+        </div>
+        <div class="result-card">
+          <span class="result-num">60 Hz</span>
+          <p>Stable frame refresh rate delivered directly to the HP E27 G5 display.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== EXTERNAL LINKS ===== -->
+    <section class="cs-links">
+      <a href="https://github.com/melll-13/blokz" class="btn btn-primary" target="_blank" rel="noopener">View Repository ↗</a>
+      <a href="Proyecto_Final_blokz.pdf" class="btn" target="_blank" rel="noopener">Read Technical PDF ↗</a>
+    </section>
+
+  </main>
+
+  <!-- ===== BACKGROUND FALLING TETROMINOES ANIMATION ===== -->
+  <script>
+    const canvas = document.getElementById('tetris-canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const blockSize = 20;
+
+    const TETROMINOES = [
+      { shape: [[1, 1, 1, 1]], color: '#00f0f0' },
+      { shape: [[1, 1], [1, 1]], color: '#f0f000' },
+      { shape: [[0, 1, 0], [1, 1, 1]], color: '#a000f0' },
+      { shape: [[0, 1, 1], [1, 1, 0]], color: '#00f000' },
+      { shape: [[1, 1, 0], [0, 1, 1]], color: '#f00000' },
+      { shape: [[1, 0, 0], [1, 1, 1]], color: '#0000f0' },
+      { shape: [[0, 0, 1], [1, 1, 1]], color: '#f0a000' }
+    ];
+
+    let tetrominoes = [];
+    let currentOpacity = 1.0;
+
+    function handleScroll() {
+      const scrollY = window.scrollY;
+      const fadeDistance = 400;
+      currentOpacity = Math.max(1 - (scrollY / fadeDistance), 0.05);
+    }
+    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+
+    function createTetromino() {
+      const template = TETROMINOES[Math.floor(Math.random() * TETROMINOES.length)];
+      const cols = Math.floor(canvas.width / blockSize);
+      const maxGridX = cols - template.shape[0].length;
+      const gridX = Math.floor(Math.random() * Math.max(1, maxGridX));
+
+      return {
+        x: gridX * blockSize,
+        y: -template.shape.length * blockSize,
+        shape: template.shape,
+        color: template.color,
+        speed: 1 + Math.random() * 2.0
+      };
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      if (currentOpacity > 0.1 && Math.random() < 0.035) {
+        tetrominoes.push(createTetromino());
+      }
+
+      ctx.globalAlpha = currentOpacity;
+
+      for (let i = 0; i < tetrominoes.length; i++) {
+        let t = tetrominoes[i];
+        t.y += t.speed;
+
+        ctx.shadowColor = t.color;
+        ctx.shadowBlur = 12;
+        ctx.fillStyle = t.color;
+
+        for (let row = 0; row < t.shape.length; row++) {
+          for (let col = 0; col < t.shape[row].length; col++) {
+            if (t.shape[row][col]) {
+              ctx.fillRect(
+                t.x + col * blockSize,
+                t.y + row * blockSize,
+                blockSize - 2,
+                blockSize - 2
+              );
+            }
+          }
+        }
+
+        ctx.shadowBlur = 0;
+
+        if (t.y > canvas.height) {
+          tetrominoes.splice(i, 1);
+          i--;
+        }
+      }
+
+      ctx.globalAlpha = 1.0;
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
