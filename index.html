@@ -2,10 +2,210 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>My Portfolio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Melany Sifuentes — Systems &amp; Software Portfolio</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
-  <h1>Welcome to my site!</h1>
-  <p>Homepage text</p>
+
+  <!-- SCROLLABLE GRADIENT ORBS ALONG THE PAGE LENGTH -->
+  <div class="bg-orb orb-1"></div>
+  <div class="bg-orb orb-2"></div>
+  <div class="bg-orb orb-purple"></div>
+  <div class="bg-orb orb-yellow"></div>
+  <div class="bg-orb orb-mint"></div>
+  <div class="bg-orb orb-3"></div>
+
+  <!-- NAVIGATION BAR -->
+  <header class="site-nav">
+    <a href="#top" class="nav-mark">MS<span>.</span></a>
+    <nav>
+      <a href="#fpga">FPGA &amp; Hardware</a>
+      <a href="#software">Software Engineering</a>
+      <a href="#automation">Data &amp; Automation</a>
+      <a href="#contact">Contact</a>
+    </nav>
+  </header>
+
+  <main class="page-container">
+
+    <!-- HERO SECTION -->
+    <section id="top" class="hero">
+      <div class="status-badge">
+        <span class="status-dot"></span> Computer Systems Engineering · UDLAP
+      </div>
+
+      <h1>Melany Sifuentes<br><span>A curated collection of my projects</span></h1>
+      <p class="hero-sub">Hardware logic, mobile and web applications, embedded systems, and automated software tools.</p>
+
+      <div class="hero-actions">
+        <a href="https://github.com/melll-13" class="btn btn-primary" target="_blank" rel="noopener">
+          <span>GitHub</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+        </a>
+        <a href="https://www.linkedin.com/in/melany-sifuentes-venegas-753bab248/" class="btn" target="_blank" rel="noopener">
+          <span>LinkedIn</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>
+        </a>
+        <a href="mailto:contact@example.com" class="btn">Email</a>
+        <a href="resume.pdf" class="btn btn-outline">Resume ↓</a>
+      </div>
+    </section>
+
+    <!-- SECTION 1: FPGA & HARDWARE -->
+    <section id="fpga" class="subject-section">
+      <div class="section-header">
+        <span class="section-tag">01 / DIGITAL LOGIC</span>
+        <h2>FPGA &amp; Hardware Engineering</h2>
+      </div>
+
+      <div class="card-grid">
+        <article class="card featured-card">
+          <div class="card-meta">
+            <span class="tech-pill">Verilog HDL</span>
+            <span class="tech-pill">Cyclone IV FPGA</span>
+            <span class="card-year">2026</span>
+          </div>
+          <h3>Blokz — FPGA Hardware Tetris Engine</h3>
+          <p>A full hardware-level Tetris engine driving direct 60Hz HDMI/VGA output, featuring hardware debouncing, LFSR pseudo-randomization, and custom state machines.</p>
+          <a href="blokz.html" class="card-link">
+            <span>Explore Case Study</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <!-- SECTION 2: SOFTWARE & MOBILE -->
+    <section id="software" class="subject-section">
+      <div class="section-header">
+        <span class="section-tag">02 / FULL STACK &amp; MOBILE</span>
+        <h2>Software Engineering</h2>
+      </div>
+
+      <div class="card-grid">
+        <article class="card">
+          <div class="card-meta">
+            <span class="tech-pill">React Native</span>
+            <span class="tech-pill">Expo Router</span>
+            <span class="tech-pill">AsyncStorage</span>
+            <span class="card-year">2026</span>
+          </div>
+          <h3>kkomo - Meal Planner and Pantry Tracker</h3>
+          <p>A mobile pantry management and meal-planning app with integrated barcode scanning, local persistence, and offline recipe generation.</p>
+          <a href="kkomo.html" class="card-link">
+            <span>View Architecture</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </article>
+
+        <article class="card">
+          <div class="card-meta">
+            <span class="tech-pill">Node-RED</span>
+            <span class="tech-pill">MQTT</span>
+            <span class="tech-pill">InfluxDB</span>
+            <span class="card-year">2026</span>
+          </div>
+          <h3>Bloom - Smart Irrigation IoT Simulator</h3>
+          <p>Emulated smart agricultural IoT system modeling multi-sensor data pipelines, message broker protocols, and real-time telemetry dashboards.</p>
+          <a href="bloom.html" class="card-link">
+            <span>View Documentation</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </article>
+
+        <article class="card">
+          <div class="card-meta">
+            <span class="tech-pill">Kotlin</span>
+            <span class="card-year">2026</span>
+          </div>
+          <h3>Studdy — An All-in-One Study App</h3>
+          <p>A mobile study app that consolidates note-taking, scheduling, and review into a single workflow.</p>
+          <a href="studdy.html" class="card-link">
+            <span>View Architecture</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </article>
+
+        <!-- Veterinary Clinic Management App -->
+        <article class="card">
+          <div class="card-meta">
+            <span class="tech-pill">MySQL</span>
+            <span class="tech-pill">Full Stack</span>
+            <span class="card-year">2024</span>
+          </div>
+          <h3>Paws and Claws</h3>
+          <p>Comprehensive platform for managing patient records, appointment scheduling, medical histories, and prescription tracking.</p>
+          <a href="pawsandclaws.html" class="card-link">
+            <span>View Architecture</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </article>
+
+        <!-- Dental Clinic Management App -->
+        <article class="card">
+          <div class="card-meta">
+            <span class="tech-pill">Full Stack</span>
+            <span class="tech-pill">Database</span>
+            <span class="card-year">2025</span>
+          </div>
+          <h3>Smile Dental Clinic Management</h3>
+          <p>Clinical management application featuring odontogram mapping, treatment planning, billing management, and patient scheduling.</p>
+          <a href="smile.html" class="card-link">
+            <span>View Architecture</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <!-- SECTION 3: AUTOMATION & DATA -->
+    <section id="automation" class="subject-section">
+      <div class="section-header">
+        <span class="section-tag">03 / AUTOMATION &amp; DATA</span>
+        <h2>Data &amp; Scripting</h2>
+      </div>
+
+      <div class="card-grid">
+        <article class="card">
+          <div class="card-meta">
+            <span class="tech-pill">Python</span>
+            <span class="tech-pill">Tesseract OCR</span>
+            <span class="tech-pill">OpenCV</span>
+            <span class="card-year">2026</span>
+          </div>
+          <h3>Automated Document Audit Pipeline</h3>
+          <p>Scripting utility extracting text from environmental compliance PDFs using OCR and cleaning structured datasets into standardized Excel logs.</p>
+          <a href="#" class="card-link">
+            <span>Read Summary</span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </a>
+        </article>
+      </div>
+    </section>
+
+    <!-- CONTACT / FOOTER -->
+    <footer id="contact" class="site-footer">
+      <div class="footer-card">
+        <h2>Let's build something together.</h2>
+        <p>Open to software, embedded systems, and tech intern opportunities.</p>
+
+        <div class="hero-actions" style="justify-content: center; margin-top: 28px;">
+          <a href="mailto:contact@example.com" class="btn btn-primary">Get in Touch</a>
+          <a href="https://github.com/melll-13" class="btn" target="_blank" rel="noopener">GitHub ↗</a>
+          <a href="https://www.linkedin.com/in/melany-sifuentes-venegas-753bab248/" class="btn" target="_blank" rel="noopener">LinkedIn ↗</a>
+        </div>
+      </div>
+      <p class="copyright">© 2026 Melany Sifuentes. Engineered with HTML &amp; CSS.</p>
+    </footer>
+
+  </main>
+
 </body>
 </html>
